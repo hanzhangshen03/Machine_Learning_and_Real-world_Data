@@ -1,0 +1,11 @@
+Review 1:
+  This review is negative. It appraised the movie for having a good pace, but it is overall mediocre and has much more potential.
+
+Review 2:
+  This review is negative. The movie did not reach their expectations because it's bland and visually lacking.
+
+Review 3:
+  This review is positive. The author likes the plot and the script.
+
+Review 4:
+  This review is positive.
