@@ -1,5 +1,6 @@
 # ticker: jgb52
 import os, math
+import numpy as np
 from typing import List, Dict, Union
 from utils.sentiment_detection import load_reviews, read_tokens, read_student_review_predictions, print_agreement_table
 from exercises.tick5 import generate_random_cross_folds, cross_validation_accuracy
@@ -207,6 +208,42 @@ def main():
     fleiss_kappa = calculate_kappa(agreement_table_four_years)
 
     print(f"The cohen kappa score for the review predictions from 2019 to 2022 is {fleiss_kappa}.")
+    
+    # star tick
+    
+    # Random guesser
+    class_priors_for_50_examples = nuanced_class_log_probabilities(tokenized_data[0: 50])
+    class_probabilities = [math.pow(math.e, class_priors_for_50_examples[i]) for i in range(-1, 2)]
+    fleiss_kappa = []
+    for exercise in range(0, 100):
+        random_guesser_predictions = [{id: np.random.choice([-1, 0, 1], p=class_probabilities) for id in range(50)} for i in range(200)]
+        agreement_table_for_random_guessers = get_agreement_table(random_guesser_predictions)
+        fleiss_kappa.append(calculate_kappa(agreement_table_for_random_guessers))
+    print(f"The average cohen kappa score for the review predictions from random guessers is {np.mean(fleiss_kappa)}.")
+    
+    #  Happy random guesser
+    fleiss_kappa = []
+    for exercise in range(0, 100):
+        happy_random_guesser_predictions = [{id: np.random.choice([-1, 0, 1], p=[0.2, 0.2, 0.6]) for id in range(50)} for i in range(200)]
+        agreement_table_for_happy_random_guessers = get_agreement_table(happy_random_guesser_predictions)
+        fleiss_kappa.append(calculate_kappa(agreement_table_for_happy_random_guessers))
+    print(f"The average cohen kappa score for the review predictions from happy random guessers is {np.mean(fleiss_kappa)}.")
+
+    #  Happy random guesser
+    fleiss_kappa = []
+    for exercise in range(0, 100):
+        doesnt_sit_on_fence_predictions = [{id: np.random.choice([-1, 0, 1], p=[0.5, 0, 0.5]) for id in range(50)} for i in range(200)]
+        agreement_table_for_doesnt_sit_on_fences = get_agreement_table(doesnt_sit_on_fence_predictions)
+        fleiss_kappa.append(calculate_kappa(agreement_table_for_doesnt_sit_on_fences))
+    print(f"The average cohen kappa score for the review predictions from doesn't-sit-on-fence guessers is {np.mean(fleiss_kappa)}.")
+
+    #  Middle of the road guesser
+    fleiss_kappa = []
+    for exercise in range(0, 100):
+        middle_of_the_road_predictions = [{id: np.random.choice([-1, 0, 1], p=[0.1, 0.8, 0.1]) for id in range(50)} for i in range(200)]
+        agreement_table_for_middle_of_the_road = get_agreement_table(middle_of_the_road_predictions)
+        fleiss_kappa.append(calculate_kappa(agreement_table_for_middle_of_the_road))
+    print(f"The average cohen kappa score for the review predictions from middle-of-the-road guessers is {np.mean(fleiss_kappa)}.")
 
 
 

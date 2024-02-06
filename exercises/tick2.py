@@ -40,7 +40,7 @@ def calculate_word_counts(training_data: List[Dict[str, Union[List[str], int]]])
     for review in training_data:
         for word in review['text']:
             word_count[review['sentiment']][word] = word_count[review['sentiment']].get(word, 0) + 1
-    return word_count    
+    return word_count
 
 
 def calculate_unsmoothed_log_probabilities(training_data: List[Dict[str, Union[List[str], int]]]) \
