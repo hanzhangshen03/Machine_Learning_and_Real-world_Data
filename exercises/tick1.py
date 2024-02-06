@@ -1,9 +1,10 @@
+# ticker: tx229
 from typing import List, Dict
 import os
 import numpy as np
 from utils.sentiment_detection import read_tokens, load_reviews, data_loader
 
-# tx229 19/01/2024
+
 def read_lexicon(filename: str) -> Dict[str, int]:
     """
     Read the lexicon from a given path.
@@ -14,15 +15,13 @@ def read_lexicon(filename: str) -> Dict[str, int]:
     lexicon = {}
     with open(filename, encoding='utf-8') as f1:
         for line in f1.readlines():
-            l1, l3, l2 = line.strip().split(' ')
+            l1, _, l2 = line.strip().split(' ')
             _, word = l1.split('=')
             _, polarity = l2.split('=')
-            _, degree = l3.split('=')
-            intensity = 1 if degree == 'weak' else 4
             if polarity == 'positive':
-                lexicon[word] = intensity
+                lexicon[word] = 1
             elif polarity == 'negative':
-                lexicon[word] = -intensity
+                lexicon[word] = -1
     return lexicon
 
 
@@ -69,15 +68,8 @@ def predict_sentiment_improved(review: List[str], lexicon: Dict[str, int]) -> in
     result = 0
     for token in review:
         if token in lexicon:
-            if lexicon[token] > 0:
-                result += 0.85
-            else:
-                result -= 1
-    if result > 2.98:
-        ans = 1
-    else:
-        ans = -1
-    return ans
+            result += 1 if lexicon[token] > 0 else -1
+    return 1 if result > 7 else -1
 
 
 def main():

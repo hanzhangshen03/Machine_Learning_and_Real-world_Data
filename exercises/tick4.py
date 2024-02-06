@@ -1,3 +1,4 @@
+# ticker: jgb52
 import os, math
 from typing import List, Dict, Tuple
 from exercises.tick1 import accuracy, predict_sentiment, read_lexicon
@@ -45,14 +46,21 @@ def predict_sentiment_magnitude(review: List[str], lexicon: Dict[str, Tuple[int,
     return 1 if result >= 0 else -1
 
 
-
 def combi(n, i):
+    """
+    Calculate the combination C(n, i)
+
+    @param n: number of objects to choose from
+    @param i: number of objects to choose
+    @return: number of ways to choose i objects from n objects
+    """
     result = 1
     for k in range(i):
         result *= (n - k)
     for k in range(i):
         result //= (k + 1)
     return result
+
 
 def sign_test(actual_sentiments: List[int], classification_a: List[int], classification_b: List[int]) -> float:
     """
@@ -80,8 +88,8 @@ def sign_test(actual_sentiments: List[int], classification_a: List[int], classif
     p *= 2
     return p
 
+
 def main():
-    # jgb52
     """
     Code to check your work locally (run this from the root directory, 'mlrd/')
     """
@@ -125,7 +133,6 @@ def main():
 
     p_value_magnitude_nb = sign_test(validation_sentiments, preds_nb, preds_magnitude)
     print(f"The p-value of the two-sided sign test for classifier_a \"{'classifier magnitude'}\" and classifier_b \"{'naive bayes classifier'}\": {p_value_magnitude_nb}")
-
 
 
 if __name__ == '__main__':

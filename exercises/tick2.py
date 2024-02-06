@@ -1,3 +1,4 @@
+# ticker: irs38
 from typing import List, Dict, Union
 import os
 from utils.sentiment_detection import read_tokens, load_reviews, split_data
@@ -14,38 +15,33 @@ def calculate_class_log_probabilities(training_data: List[Dict[str, Union[List[s
         'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive and negative sentiments.
     @return: dictionary from sentiment to prior log probability
     """
+    # count the number of positive and negative reviews
     positive = 0
     negative = 0
     for i, review in enumerate(training_data):
-        # print(i)
         if (review['sentiment'] == 1):
             positive += 1
         else:
             negative += 1
+    # calculate the log probability for each class
     result = {1: math.log(positive / (positive + negative)), -1: math.log(negative / (positive + negative))}
     return result
 
-def calculate_word_counts(training_data: List[Dict[str, Union[List[str], int]]]) -> (Dict[str, int], Dict[str, int], int, int):
-    positive_count = {}
-    negative_count = {}
-    total_pos = 0
-    total_neg = 0
+
+def calculate_word_counts(training_data: List[Dict[str, Union[List[str], int]]]) -> Dict[int, Dict[str, int]]:
+    """
+    Calculate the word count for each word under each sentiment class
+
+    @param training_data: list of training instances, where each instance is a dictionary with two fields: 'text' and
+        'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive, neutral, and negative sentiments.
+    @return: dictionary from sentiment to Dictionary of tokens with respective word count
+    """
+    word_count = {1: {}, -1: {}}
     for review in training_data:
-        if review['sentiment'] == 1:
-            for word in review['text']:
-                if word in positive_count:
-                    positive_count[word] += 1
-                else:
-                    positive_count[word] = 1
-                total_pos += 1
-        else:
-            for word in review['text']:
-                if word in negative_count:
-                    negative_count[word] += 1
-                else:
-                    negative_count[word] = 1
-                total_neg += 1
-    return (positive_count, negative_count, total_pos, total_neg)
+        for word in review['text']:
+            word_count[review['sentiment']][word] = word_count[review['sentiment']].get(word, 0) + 1
+    return word_count    
+
 
 def calculate_unsmoothed_log_probabilities(training_data: List[Dict[str, Union[List[str], int]]]) \
         -> Dict[int, Dict[str, float]]:
@@ -56,13 +52,15 @@ def calculate_unsmoothed_log_probabilities(training_data: List[Dict[str, Union[L
         'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive and negative sentiments.
     @return: dictionary from sentiment to Dictionary of tokens with respective log probability
     """
-    (positive_count, negative_count, total_pos, total_neg) = calculate_word_counts(training_data)
+    word_count = calculate_word_counts(training_data)
     result = {1: {}, -1: {}}
-    for item in positive_count.keys():
-        result[1][item] = math.log(positive_count[item] / total_pos)
-    for item in negative_count.keys():
-        result[-1][item] = math.log(negative_count[item] / total_neg)
+    word_count_for_class = {1: sum(word_count[1].values()), -1: sum(word_count[-1].values())}
+    # calculate the unsmoothed log probabilities
+    for sentiment in [-1, 1]:
+        for word in word_count[sentiment].keys():
+            result[sentiment][word] = math.log(word_count[sentiment][word] / word_count_for_class[sentiment])
     return result
+
 
 def calculate_smoothed_log_probabilities(training_data: List[Dict[str, Union[List[str], int]]]) \
         -> Dict[int, Dict[str, float]]:
@@ -74,22 +72,15 @@ def calculate_smoothed_log_probabilities(training_data: List[Dict[str, Union[Lis
         'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive and negative sentiments.
     @return: Dictionary from sentiment to Dictionary of tokens with respective log probability
     """
-    (positive_count, negative_count, total_pos, total_neg) = calculate_word_counts(training_data)
+    word_count = calculate_word_counts(training_data)
+    total_word_count = {1: sum(word_count[1].values()), -1: sum(word_count[-1].values())}
     result = {1: {}, -1: {}}
-    vocab = []
-    vocab.extend(list(positive_count.keys()))
-    vocab.extend(list(negative_count.keys()))
-    v = len(set(vocab))
-    for item in positive_count.keys():
-        result[1][item] = math.log((positive_count[item] + 1) / (total_pos + v))
-        if not(item in negative_count.keys()):
-            result[-1][item] = math.log(1 / (total_neg + v))
-    for item in negative_count.keys():
-        result[-1][item] = math.log((negative_count[item] + 1) / (total_neg + v))
-        if not(item in positive_count.keys()):
-            result[1][item] = math.log(1 / (total_pos + v))
+    vocabulary = set.union(*(set(d.keys()) for d in word_count.values()))
+    vocab_length = len(vocabulary)
+    for word in vocabulary:
+        for sentiment in [-1, 1]:
+            result[sentiment][word] = math.log((word_count[sentiment].get(word, 0) + 1) / (total_word_count[sentiment] + vocab_length))
     return result
-
 
 
 def predict_sentiment_nbc(review: List[str], log_probabilities: Dict[int, Dict[str, float]],
@@ -102,23 +93,19 @@ def predict_sentiment_nbc(review: List[str], log_probabilities: Dict[int, Dict[s
     @param class_log_probabilities: dictionary from sentiment to prior log probability
     @return: predicted sentiment [-1, 1] for the given review
     """
-    pos = 0
+    # calculate the probabilities for the review to belong to each class with naive bayes model
+    sentiments = set(class_log_probabilities.keys())
+    probability = {sentiment: 0 for sentiment in sentiments}
     for word in review:
-        if word in log_probabilities[1].keys():
-            pos += log_probabilities[1][word]
-    pos += class_log_probabilities[1]
-
-    neg = 0
-    for word in review:
-        if word in log_probabilities[-1].keys():
-            neg += log_probabilities[-1][word]
-    neg += class_log_probabilities[-1]
-
-    return 1 if pos > neg else -1
+        for sentiment in sentiments:
+            probability[sentiment] += log_probabilities[sentiment].get(word, 0)
+    for sentiment in sentiments:
+        probability[sentiment] += class_log_probabilities[sentiment]
+    # return argmax
+    return max(probability, key=probability.get)
 
 
 def main():
-    # irs38
     """
     Code to check your work locally (run this from the root directory, 'mlrd/')
     """
@@ -156,12 +143,6 @@ def main():
 
     acc_smoothed = accuracy(preds_smoothed, validation_sentiments)
     print(f"Your accuracy using smoothed probabilities: {acc_smoothed}")
-
-    to = ['all', 'amenities', 'and', 'architecture', 'are', 'around', 'but', 'enjoy', 'especially',
-             'expensive', 'fairly', 'for', 'garden', 'have', 'in', 'interesting', 'is', 'lovely,',
-             'necessary', 'quite', 'rooms', 'spring', 'students', 'the', 'to', 'walk', 'weather']
-    predd = predict_sentiment_nbc(to, smoothed_log_probabilities, class_priors)
-    print(predd)
 
 if __name__ == '__main__':
     main()

@@ -1,9 +1,7 @@
+# ticker: jgb52
 import os, math
-
 from typing import List, Dict, Union
-
 from utils.sentiment_detection import load_reviews, read_tokens, read_student_review_predictions, print_agreement_table
-
 from exercises.tick5 import generate_random_cross_folds, cross_validation_accuracy
 
 
@@ -43,7 +41,7 @@ def nuanced_conditional_log_probabilities(training_data: List[Dict[str, Union[Li
         'sentiment'. 'text' is the tokenized review and 'sentiment' is +1, 0 or -1, for positive, neutral, and negative sentiments.
     @return: dictionary from sentiment to Dictionary of tokens with respective log probability
     """
-    # find the word count for each word under each sentiment
+    # find the word count for each word under each sentiment class
     word_count = {1: {}, 0: {}, -1: {}}
     for review in training_data:
         for word in review['text']:
@@ -51,7 +49,7 @@ def nuanced_conditional_log_probabilities(training_data: List[Dict[str, Union[Li
     
     # calculate the smoothed log probability
     result = {1: {}, 0: {}, -1: {}}
-    vocabulary = set.union(*(set(d2.keys()) for d2 in word_count.values()))
+    vocabulary = set.union(*(set(d.keys()) for d in word_count.values()))
     total_word_count = {i: sum(word_count[i].values()) for i in range(-1, 2)}
     vocab_length = len(vocabulary)
     for word in vocabulary:

@@ -1,3 +1,4 @@
+# ticker: irs38
 from typing import List, Dict, Union
 import os
 from utils.sentiment_detection import read_tokens, load_reviews, print_binary_confusion_matrix
@@ -51,6 +52,7 @@ def generate_stratified_cross_folds(training_data: List[Dict[str, Union[List[str
         result.append(ls)
     return result
 
+
 def cross_validate_nbc(split_training_data: List[List[Dict[str, Union[List[str], int]]]]) -> List[float]:
     """
     Perform an n-fold cross validation, and return the mean accuracy and variance.
@@ -74,6 +76,7 @@ def cross_validate_nbc(split_training_data: List[List[Dict[str, Union[List[str],
         acc = accuracy(preds, [item['sentiment'] for item in split_training_data[i]])
         a.append(acc)
     return a
+
 
 def cross_validation_accuracy(accuracies: List[float]) -> float:
     """Calculate the mean accuracy across n cross fold accuracies.
@@ -119,11 +122,11 @@ def confusion_matrix(predicted_sentiments: List[int], actual_sentiments: List[in
             p_4 += 1
     return [[p_1, p_2], [p_3, p_4]]
 
+
 def main():
     """
     Code to check your work locally (run this from the root directory, 'mlrd/')
     """
-    # irs38
     review_data = load_reviews(os.path.join('data', 'sentiment_detection', 'reviews'))
     tokenized_data = [{'text': read_tokens(fn['filename']), 'sentiment': fn['sentiment']} for fn in review_data]
 
@@ -191,9 +194,8 @@ def main():
 
     # star tick
     flipped_connotation = []
-    smoothed_log_probabilities_for_test = calculate_smoothed_log_probabilities([{'text' : test_tokens[0], 'sentiment' : test_sentiments}])
-    smoothed_log_probabilities_for_2016 = calculate_smoothed_log_probabilities([{'text' : recent_tokens[0], 'sentiment' : recent_sentiments}])
-    count = 0
+    smoothed_log_probabilities_for_test = calculate_smoothed_log_probabilities([{'text' : test_token, 'sentiment' : test_sentiment} for test_token, test_sentiment in zip(test_tokens, test_sentiments)])
+    smoothed_log_probabilities_for_2016 = calculate_smoothed_log_probabilities([{'text' : recent_token, 'sentiment' : recent_sentiment} for recent_token, recent_sentiment in zip(recent_tokens, recent_sentiments)])
     for word in smoothed_log_probabilities_for_test[1].keys():
         old_positive_probability = smoothed_log_probabilities_for_test[1][word]
         old_negative_probability = smoothed_log_probabilities_for_test[-1][word]

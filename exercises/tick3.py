@@ -1,3 +1,4 @@
+# ticker: irs38
 from utils.sentiment_detection import clean_plot, chart_plot, best_fit
 from typing import List, Tuple, Callable
 import math
@@ -19,8 +20,6 @@ def estimate_zipf(token_frequencies_log: List[Tuple[float, float]], token_freque
     def fun(rank: int):
         return math.pow(math.e, c) * math.pow(rank, m)
     return fun
-
-    
 
 
 def count_token_frequencies(dataset_path: str) -> List[Tuple[str, int]]:
@@ -50,7 +49,6 @@ def draw_frequency_ranks(frequencies: List[Tuple[str, int]]) -> None:
     """
     l = [(k + 1, frequencies[k][1]) for k in range(10000)]
     chart_plot(l, "frequency vs rank", "rank", "frequency")
-
 
 
 def draw_selected_words_ranks(frequencies: List[Tuple[str, int]]) -> None:
@@ -95,8 +93,6 @@ def draw_zipf(frequencies: List[Tuple[str, int]]) -> None:
     print(f"k is {math.pow(math.e, c)}, alpha is {-m}")
 
 
-
-
 def compute_type_count(dataset_path: str) -> List[Tuple[int, int]]:
     """
      Go through the words in the dataset; record the number of unique words against the total number of words for total
@@ -128,7 +124,6 @@ def compute_type_count(dataset_path: str) -> List[Tuple[int, int]]:
     return ls
 
 
-
 def draw_heap(type_counts: List[Tuple[int, int]]) -> None:
     """
     Use the provided chart plotting program to plot the logs of the number of unique words against the logs of the
@@ -144,7 +139,6 @@ def main():
     """
     Code to check your work locally (run this from the root directory, 'mlrd/')
     """
-    # irs38
     frequencies = count_token_frequencies(os.path.join('data', 'sentiment_detection', 'reviews_large', 'reviews'))
 
     draw_frequency_ranks(frequencies)
