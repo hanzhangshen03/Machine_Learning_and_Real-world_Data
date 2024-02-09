@@ -229,7 +229,7 @@ def main():
         fleiss_kappa.append(calculate_kappa(agreement_table_for_happy_random_guessers))
     print(f"The average cohen kappa score for the review predictions from happy random guessers is {np.mean(fleiss_kappa)}.")
 
-    #  Happy random guesser
+    #  Doesn't sit on fence guesser
     fleiss_kappa = []
     for exercise in range(0, 100):
         doesnt_sit_on_fence_predictions = [{id: np.random.choice([-1, 0, 1], p=[0.5, 0, 0.5]) for id in range(50)} for i in range(200)]
