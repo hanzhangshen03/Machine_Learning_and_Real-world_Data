@@ -16,6 +16,8 @@ Tick 5: Cross-Validation and Evaluation Sets
 Tick 6: Uncertainty and Human Agreement
 
 Tick 7: Training the Hidden Markov Model
+
+Tick 8: Viterbi algorithm
 ## How to run the code
 Python version: 3.10.12
 
