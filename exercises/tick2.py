@@ -4,6 +4,8 @@ import os
 from utils.sentiment_detection import read_tokens, load_reviews, split_data
 from exercises.tick1 import accuracy, predict_sentiment, read_lexicon
 import math
+from matplotlib import pyplot as plt
+from random import shuffle
 
 
 def calculate_class_log_probabilities(training_data: List[Dict[str, Union[List[str], int]]]) \
@@ -104,6 +106,59 @@ def predict_sentiment_nbc(review: List[str], log_probabilities: Dict[int, Dict[s
     # return argmax
     return max(probability, key=probability.get)
 
+def train_and_test_with_different_amount_of_data(training_data: List[Dict[str, Union[List[str], int]]],
+                                                 dev_tokenized_data: List[List[str]], validation_sentiments: List[int]):
+    """
+    Use different amount of training data to train the Naive Bayes Classifier and compare the performance by plotting
+    the accuracies for each training set.
+
+    Args:
+        training_data (List[Dict[str, Union[List[str], int]]]): list of training instances, where each instance is a dictionary with two fields: 'text' and
+        'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive and negative sentiments.
+        dev_tokenized_data (List[List[str]]): list of reviews, which are individually lists of strings.
+        validation_sentiments (List[int]): list of correct sentiments for each review. 
+    """
+    accuracies = []
+    
+    # split the training data into 80 folds while keeping the original distribution of classes for each fold
+    n = 80
+    positive = []
+    negative = []
+    for i in training_data:
+        if i['sentiment'] == 1:
+            positive.append(i)
+        else:
+            negative.append(i)
+    shuffle(positive)
+    shuffle(negative)
+    dataset = []
+    for i in range(n):
+        dataset.extend(positive[i * len(positive) // n : (i + 1) * len(positive) // n])
+        dataset.extend(negative[i * len(negative) // n : (i + 1) * len(negative) // n])
+    group_length = len(training_data) // n
+    
+    # train the Naive Bayes Classifier with different amount of data, and calculate their accuracies
+    for group in range(1, n + 1):
+        class_priors = calculate_class_log_probabilities(dataset[: group_length * group])
+        smoothed_log_probabilities = calculate_smoothed_log_probabilities(dataset[: group_length * group])
+        preds = []
+        for review in dev_tokenized_data:
+            pred = predict_sentiment_nbc(review, smoothed_log_probabilities, class_priors)
+            preds.append(pred)
+        acc_smoothed = accuracy(preds, validation_sentiments)
+        accuracies.append(acc_smoothed)
+    fig, ax = plt.subplots()
+    ax.plot([group_length * i for i in range(1, n + 1)], accuracies)
+    ax.set_ylabel('Accuracy')
+    ax.set_xlabel('Length of training data (in number of reviews)')
+    fig.suptitle('Accuracy of a Naive Bayes Classifier against the length of training data')
+    plt.savefig(os.path.join('figures/tick2_star/accuracy_against_length_of_data.png'), dpi=300)
+    for group in range(1, n + 1):
+        if accuracies[group] > 0.63:
+            print(f"The Naive Bayes classifier outperforms the lexicon based classifier with a training data of {group * group_length} reviews.")
+            break
+
+
 
 def main():
     """
@@ -143,6 +198,11 @@ def main():
 
     acc_smoothed = accuracy(preds_smoothed, validation_sentiments)
     print(f"Your accuracy using smoothed probabilities: {acc_smoothed}")
+    
+    # tick2 star
+    # 1. Investigate the relationship between the model's performance and the amount of training data
+    train_and_test_with_different_amount_of_data(train_tokenized_data, dev_tokenized_data, validation_sentiments)
+    
 
 if __name__ == '__main__':
     main()
