@@ -206,7 +206,7 @@ def main():
     """
     bio_data = load_bio_data(os.path.join('data', 'markov_models', 'bio_dataset.txt'))
 
-    seed = 2
+    seed = 3
     print(f"Evaluating HMM on a single training and dev split using random seed {seed}.")
     random.seed(seed)
     bio_data_shuffled = random.sample(bio_data, len(bio_data))
@@ -238,9 +238,34 @@ def main():
         for i in range(0, len(content), 2):
             unlabeled_data.append(list(content[i].strip())[1:])
 
-    scores_each_iteration = self_training_hmm(train, dev, unlabeled_data, 5)
+    # Investigate: use observed sequence in training data as unlabelled data
+    # scores_each_iteration = self_training_hmm(train, dev, [i['observed'] for i in train], 5)
+
+    # Investigate: use observed sequence in development data as unlabelled data
+    scores_each_iteration = self_training_hmm(train, dev, dev_observed_sequences, 5)
+
+    # scores_each_iteration = self_training_hmm(train, dev, unlabeled_data, 5)
 
     visualize_scores(scores_each_iteration)
+
+    # tick 9 star
+    # find the maximum and minimum lengths of 'M' sequences in hidden states
+    minimum = math.inf
+    maximum = 0
+    for sequence in train:
+        i = 0
+        count = 0
+        while i < len(sequence['hidden']):
+            # print(sequence['hidden'][i])
+            if sequence['hidden'][i] != 'M' and count > 0:
+                minimum = min(count, minimum)
+                maximum = max(count, maximum)
+                count = 0
+            elif sequence['hidden'][i] == 'M':
+                count += 1
+            i += 1
+    print(f"The maximum length of 'within the membrane' sequence is {maximum}.")
+    print(f"The minimum length of 'within the membrane' sequence is {minimum}.")
 
 
 if __name__ == '__main__':
