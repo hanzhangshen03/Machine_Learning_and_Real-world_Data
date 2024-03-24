@@ -1,8 +1,8 @@
 # ticker: jgb52
 import os, math
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 from exercises.tick1 import accuracy, predict_sentiment, read_lexicon
-from exercises.tick2 import calculate_class_log_probabilities, calculate_smoothed_log_probabilities, predict_sentiment_nbc
+from exercises.tick2 import calculate_class_log_probabilities, calculate_smoothed_log_probabilities, predict_sentiment_nbc, calculate_word_counts
 from utils.sentiment_detection import read_tokens, load_reviews, split_data
 
 
@@ -88,6 +88,29 @@ def sign_test(actual_sentiments: List[int], classification_a: List[int], classif
     p *= 2
     return p
 
+def calculate_smoothed_log_probabilities_with_different_parameter(training_data: List[Dict[str, Union[List[str], int]]]) \
+        -> Dict[int, Dict[str, float]]:
+    """
+    Calculate the smoothed log likelihood log (P(x|c)) of a word in the vocabulary given a sentiment. Use the smoothing
+    technique described in the instructions (Laplace smoothing).
+
+    @param training_data: list of training instances, where each instance is a dictionary with two fields: 'text' and
+        'sentiment'. 'text' is the tokenized review and 'sentiment' is +1 or -1, for positive and negative sentiments.
+    @return: Dictionary from sentiment to Dictionary of tokens with respective log probability
+    """
+    word_count = calculate_word_counts(training_data)
+    total_word_count = {1: sum(word_count[1].values()), -1: sum(word_count[-1].values())}
+    result = {1: {}, -1: {}}
+    vocabulary = set.union(*(set(d.keys()) for d in word_count.values()))
+    vocab_length = len(vocabulary)
+    
+    # smoothing parameter
+    alpha = 0.65
+    for word in vocabulary:
+        for sentiment in [-1, 1]:
+            result[sentiment][word] = math.log((word_count[sentiment].get(word, 0) + alpha) / (total_word_count[sentiment] + vocab_length * alpha))
+    return result
+
 
 def main():
     """
@@ -133,6 +156,20 @@ def main():
 
     p_value_magnitude_nb = sign_test(validation_sentiments, preds_nb, preds_magnitude)
     print(f"The p-value of the two-sided sign test for classifier_a \"{'classifier magnitude'}\" and classifier_b \"{'naive bayes classifier'}\": {p_value_magnitude_nb}")
+
+    # tick 4 star
+    class_priors = calculate_class_log_probabilities(train_tokenized_data)
+    smoothed_log_probabilities = calculate_smoothed_log_probabilities_with_different_parameter(train_tokenized_data)
+
+    preds_nb = []
+    for review in dev_tokenized_data:
+        pred = predict_sentiment_nbc(review, smoothed_log_probabilities, class_priors)
+        preds_nb.append(pred)
+
+    acc_nb = accuracy(preds_nb, validation_sentiments)
+    print(f"Your accuracy using Naive Bayes classifier with smoothing parameter 0.65: {acc_nb}\n")
+    # This gives a better performance. Using sign test on the best result is invalid because we are essentially conducting multiple hypothesis testing.
+    # If we just pick the best result, we are basically cherry-picking the results and essentially inflating the significance levels.
 
 
 if __name__ == '__main__':
